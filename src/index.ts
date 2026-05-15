@@ -18,14 +18,18 @@ async function start() {
   await fastify.register(rescueRoutes)
 
   setInterval(async () => {
-    const result = await pool.query(
-      `UPDATE users SET status = 'INACTIVE'
-       WHERE last_seen < now() - INTERVAL '30 minutes'
-         AND status != 'INACTIVE'
-       RETURNING id`
-    )
-    for (const row of result.rows) {
-      manager.broadcast({ type: 'status_change', user_id: row.id, status: 'INACTIVE' })
+    try {
+      const result = await pool.query(
+        `UPDATE users SET status = 'INACTIVE'
+         WHERE last_seen < now() - INTERVAL '30 minutes'
+           AND status != 'INACTIVE'
+         RETURNING id`
+      )
+      for (const row of result.rows) {
+        manager.broadcast({ type: 'status_change', user_id: row.id, status: 'INACTIVE' })
+      }
+    } catch (err) {
+      fastify.log.error(err, 'inactivity cron failed')
     }
   }, 5 * 60 * 1000)
 
