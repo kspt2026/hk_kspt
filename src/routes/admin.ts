@@ -1,11 +1,18 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { getDB } from '../db'
+import { sendZonesUpdatedPush } from '../firebase'
+
+async function getAllTokens(): Promise<string[]> {
+  const docs = await getDB().collection('device_tokens').find({}, { projection: { token: 1 } }).toArray()
+  return docs.map((d) => d.token).filter(Boolean)
+}
 
 export const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/admin/zones', async (req) => {
     const { polygon } = req.body as { polygon: object }
     const id = crypto.randomUUID()
     await getDB().collection('danger_zones').insertOne({ _id: id as any, polygon, active: true, created_at: new Date() })
+    sendZonesUpdatedPush(await getAllTokens()).catch(() => {})
     return { id, active: true }
   })
 
@@ -18,6 +25,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       reply.status(404)
       return { error: 'Zone not found' }
     }
+    sendZonesUpdatedPush(await getAllTokens()).catch(() => {})
     return { ok: true }
   })
 

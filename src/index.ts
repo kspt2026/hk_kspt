@@ -7,6 +7,7 @@ import { manager } from './utils'
 import { adminRoutes } from './routes/admin'
 import { userRoutes } from './routes/user'
 import { rescueRoutes } from './routes/rescue'
+import { tokenRoutes } from './routes/tokens'
 
 const fastify = Fastify({ logger: true })
 
@@ -18,6 +19,7 @@ async function start() {
   await fastify.register(adminRoutes)
   await fastify.register(userRoutes)
   await fastify.register(rescueRoutes)
+  await fastify.register(tokenRoutes)
 
   setInterval(async () => {
     try {
