@@ -30,15 +30,15 @@ const geoJsonToPositions = (polygon) =>
   polygon.coordinates[0].map(([lon, lat]) => [lat, lon]);
 
 const STATUS_COLOR = {
-  DANGER:   'text-red-400',
-  SAFE:     'text-green-400',
-  INACTIVE: 'text-gray-500',
+  DANGER:   'text-red-500',
+  SAFE:     'text-green-500',
+  INACTIVE: 'text-neutral-400',
 };
 
 const STATUS_CARD = {
-  DANGER:   'bg-red-900/30 border-red-800',
-  SAFE:     'bg-green-900/20 border-green-900',
-  INACTIVE: 'bg-gray-800/40 border-gray-700',
+  DANGER:   'bg-red-600/20 border-white/10',
+  SAFE:     'bg-green-900/20 border-white/10',
+  INACTIVE: 'border-white/10',
 };
 
 const FILTERS = [
@@ -196,7 +196,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-mono">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#0a0a0f] text-white">
       <main className="flex-1 relative">
         <MapComponent
           ref={mapRef}
@@ -220,13 +220,13 @@ export default function App() {
         initial={{ x: 40, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="w-80 flex-shrink-0 h-full overflow-y-auto border-l border-default-200 bg-background"
+        className="w-80 flex-shrink-0 h-full overflow-y-auto border-l border-white/10 bg-[#0a0a0f]"
       >
         <Card variant="flat" className="rounded-none border-0 bg-transparent">
           <Card.Header className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-sm font-bold tracking-widest text-red-400 uppercase">
+              <span className="text-sm font-bold tracking-widest text-white uppercase">
                 RescueGrid
               </span>
             </div>
@@ -238,16 +238,16 @@ export default function App() {
           <Separator />
 
           <Card.Content className="px-4 py-2 flex flex-row gap-3 text-xs">
-            <span className="text-default-500">
-              Total <strong className="text-foreground">{users.length}</strong>
+            <span className="text-neutral-400">
+              Total <strong className="text-white">{users.length}</strong>
             </span>
-            <span className="text-red-400">
+            <span className="text-red-500">
               <strong>{counts.DANGER}</strong> DANGER
             </span>
-            <span className="text-green-400">
+            <span className="text-green-500">
               <strong>{counts.SAFE}</strong> SAFE
             </span>
-            <span className="text-default-500">
+            <span className="text-neutral-400">
               <strong>{counts.INACTIVE}</strong> inactive
             </span>
           </Card.Content>
@@ -258,7 +258,9 @@ export default function App() {
         <div className="px-3 pt-3">
           <Tabs
             aria-label="Panel sections"
-            variant="primary"
+            variant="solid"
+            color="default"
+            classNames={{ cursor: "bg-default-300" }}
             selectedKey={activeTab}
             onSelectionChange={(key) => setActiveTab(String(key))}
           >
@@ -290,7 +292,7 @@ export default function App() {
                       onPress={() => setUserFilter(value)}
                       size="sm"
                       fullWidth
-                      variant={userFilter === value ? 'primary' : 'outline'}
+                      variant={userFilter === value ? 'primary' : 'secondary'}
                     >
                       {label}
                     </Button>
@@ -299,7 +301,7 @@ export default function App() {
 
                 <ScrollShadow className="max-h-[calc(100vh-260px)] flex flex-col gap-1.5 pb-3">
                   {filteredUsers.length === 0 ? (
-                    <p className="text-xs text-default-400 italic px-1 pt-2">No users</p>
+                    <p className="text-xs text-neutral-400 italic px-1 pt-2">No users</p>
                   ) : (
                     <motion.div layout className="flex flex-col gap-1.5">
                       <AnimatePresence>
@@ -331,7 +333,7 @@ export default function App() {
                                     {u.status}
                                   </span>
                                 </div>
-                                <p className="text-xs text-default-500 mt-0.5">
+                                <p className="text-xs text-neutral-400 mt-0.5">
                                   {formatLastSeen(u.last_seen)}
                                   {u.pings?.[0] &&
                                     ` · ${u.pings[0].lat.toFixed(4)}, ${u.pings[0].lon.toFixed(4)}`}
@@ -353,14 +355,14 @@ export default function App() {
                   <Button
                     onPress={toggleDrawMode}
                     fullWidth
-                    variant={drawMode ? 'primary' : 'outline'}
+                    variant={drawMode ? 'danger' : 'primary'}
                   >
                     {drawMode ? 'Cancel Drawing' : '+ Draw Zone'}
                   </Button>
 
                   {drawMode && (
                     <>
-                      <p className="text-xs text-orange-400">
+                      <p className="text-xs text-neutral-400">
                         Click map to place exactly 4 points.
                       </p>
                       <Input
@@ -376,14 +378,14 @@ export default function App() {
                   {points.length > 0 && (
                     <div className="flex flex-col gap-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-default-500">
+                        <span className="text-xs text-neutral-400">
                           {points.length} point{points.length !== 1 ? 's' : ''} placed
                         </span>
                         <div className="flex gap-1">
                           <Button
                             onPress={undoPoint}
                             size="sm"
-                            variant="outline"
+                            variant="secondary"
                           >
                             Undo
                           </Button>
@@ -429,7 +431,7 @@ export default function App() {
 
                 <ScrollShadow className="max-h-[calc(100vh-320px)] flex flex-col gap-2">
                   {zones.length === 0 ? (
-                    <p className="text-xs text-default-400 italic">No active zones</p>
+                    <p className="text-xs text-neutral-400 italic">No active zones</p>
                   ) : (
                     <motion.div layout className="flex flex-col gap-2">
                       <AnimatePresence>
@@ -441,11 +443,11 @@ export default function App() {
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.15 }}
                           >
-                            <Card variant="flat" className="border border-orange-900">
+                            <Card variant="flat" className="border border-white/10">
                               <Card.Content className="flex flex-row items-center justify-between px-3 py-2">
                                 <div className="min-w-0 mr-2">
-                                  <p className="text-sm font-bold text-orange-300 truncate">{z.name}</p>
-                                  <p className="text-xs text-default-500 font-mono">…{z.id.slice(-8)}</p>
+                                  <p className="text-sm font-bold text-white truncate">{z.name}</p>
+                                  <p className="text-xs text-neutral-400 font-mono">…{z.id.slice(-8)}</p>
                                 </div>
                                 <Button
                                   onPress={() => handleDeleteZone(z.id)}
