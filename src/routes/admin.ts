@@ -1,56 +1,57 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { pool } from '../db'
+import { getDB } from '../db'
+import { sendZonesUpdatedPush } from '../firebase'
+
+async function getAllTokens(): Promise<string[]> {
+  const docs = await getDB().collection('device_tokens').find({}, { projection: { token: 1 } }).toArray()
+  return docs.map((d) => d.token).filter(Boolean)
+}
 
 export const adminRoutes: FastifyPluginAsync = async (fastify) => {
-  fastify.post('/admin/zones', async (req, reply) => {
+  fastify.post('/admin/zones', async (req) => {
     const { polygon } = req.body as { polygon: object }
-    const result = await pool.query(
-      `INSERT INTO danger_zones (polygon)
-       VALUES (ST_GeomFromGeoJSON($1))
-       RETURNING id, active`,
-      [JSON.stringify(polygon)]
-    )
-    return result.rows[0]
+    const id = crypto.randomUUID()
+    await getDB().collection('danger_zones').insertOne({ _id: id as any, polygon, active: true, created_at: new Date() })
+    sendZonesUpdatedPush(await getAllTokens()).catch(() => {})
+    return { id, active: true }
   })
 
   fastify.delete<{ Params: { zone_id: string } }>('/admin/zones/:zone_id', async (req, reply) => {
-    const { zone_id } = req.params
-    const result = await pool.query(
-      `UPDATE danger_zones SET active = false WHERE id = $1`,
-      [zone_id]
+    const result = await getDB().collection('danger_zones').updateOne(
+      { _id: req.params.zone_id as any },
+      { $set: { active: false } }
     )
-    if (result.rowCount === 0) {
+    if (result.matchedCount === 0) {
       reply.status(404)
       return { error: 'Zone not found' }
     }
+    sendZonesUpdatedPush(await getAllTokens()).catch(() => {})
     return { ok: true }
   })
 
   fastify.get('/admin/users', async () => {
-    const result = await pool.query(`
-      SELECT
-        u.id,
-        u.status,
-        u.last_seen,
-        COALESCE(
-          (
-            SELECT json_agg(row_to_json(p))
-            FROM (
-              SELECT lat, lon, ts
-              FROM location_pings
-              WHERE user_id = u.id
-              ORDER BY received_at DESC
-              LIMIT 10
-            ) p
-          ),
-          '[]'::json
-        ) AS pings
-      FROM users u
-      ORDER BY u.last_seen DESC NULLS LAST
-    `)
-    return result.rows.map((row) => ({
-      ...row,
-      last_seen: row.last_seen?.toISOString() ?? null,
+    const users = await getDB().collection('users').aggregate([
+      {
+        $lookup: {
+          from: 'location_pings',
+          let: { uid: '$_id' },
+          pipeline: [
+            { $match: { $expr: { $eq: ['$user_id', '$$uid'] } } },
+            { $sort: { received_at: -1 } },
+            { $limit: 10 },
+            { $project: { _id: 0, lat: 1, lon: 1, ts: 1 } },
+          ],
+          as: 'pings',
+        },
+      },
+      { $sort: { last_seen: -1 } },
+    ]).toArray()
+
+    return users.map((u) => ({
+      id: u._id,
+      status: u.status,
+      last_seen: u.last_seen ?? null,
+      pings: u.pings,
     }))
   })
 }

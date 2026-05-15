@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
-import { pool } from '../db'
+import { getDB } from '../db'
 import { haversine, manager } from '../utils'
 
 interface PingBody {
@@ -11,67 +11,56 @@ interface PingBody {
 
 export const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/zones', async () => {
-    const result = await pool.query(
-      `SELECT id, ST_AsGeoJSON(polygon)::text AS polygon
-       FROM danger_zones WHERE active = true`
-    )
-    return result.rows.map((row) => ({
-      id: row.id,
-      polygon: JSON.parse(row.polygon),
-    }))
+    const zones = await getDB().collection('danger_zones').find({ active: true }, {
+      projection: { _id: 1, polygon: 1 },
+    }).toArray()
+    return zones.map((z) => ({ id: z._id, polygon: z.polygon }))
   })
 
   fastify.post<{ Body: PingBody }>('/coords', async (req) => {
     const { user_id, lat, lon, ts } = req.body
-    const tsDate = new Date(ts)
+    const db = getDB()
+    const pingsCol = db.collection('location_pings')
+    const usersCol = db.collection('users')
 
     // 1. Upsert user
-    await pool.query(
-      `INSERT INTO users (id, status, last_seen) VALUES ($1, 'DANGER', now())
-       ON CONFLICT (id) DO UPDATE SET last_seen = now()`,
-      [user_id]
+    await usersCol.updateOne(
+      { _id: user_id as any },
+      { $set: { last_seen: new Date() }, $setOnInsert: { status: 'DANGER', created_at: new Date() } },
+      { upsert: true }
     )
 
     // 2. Insert ping
-    await pool.query(
-      `INSERT INTO location_pings (user_id, lat, lon, ts) VALUES ($1, $2, $3, $4)`,
-      [user_id, lat, lon, tsDate]
-    )
+    await pingsCol.insertOne({ user_id, lat, lon, ts: new Date(ts), received_at: new Date() })
 
     // 3. Trim to last 10
-    await pool.query(
-      `DELETE FROM location_pings
-       WHERE user_id = $1
-         AND id NOT IN (
-           SELECT id FROM location_pings
-           WHERE user_id = $1
-           ORDER BY received_at DESC
-           LIMIT 10
-         )`,
-      [user_id]
-    )
+    const keep = await pingsCol
+      .find({ user_id }, { projection: { _id: 1 } })
+      .sort({ received_at: -1 })
+      .limit(10)
+      .toArray()
+    if (keep.length === 10) {
+      await pingsCol.deleteMany({ user_id, _id: { $nin: keep.map((p) => p._id) } })
+    }
 
     // 4. Fetch last 3 pings
-    const pingsResult = await pool.query<{ lat: number; lon: number }>(
-      `SELECT lat, lon FROM location_pings
-       WHERE user_id = $1
-       ORDER BY received_at DESC
-       LIMIT 3`,
-      [user_id]
-    )
-    const pings = pingsResult.rows
+    const recent = await pingsCol
+      .find({ user_id }, { projection: { lat: 1, lon: 1 } })
+      .sort({ received_at: -1 })
+      .limit(3)
+      .toArray()
 
-    // 5. Determine status — all 3 consecutive gaps must exceed 5 m
+    // 5. Determine status
     let status = 'DANGER'
-    if (pings.length === 3) {
-      const d1 = haversine(pings[0].lat, pings[0].lon, pings[1].lat, pings[1].lon)
-      const d2 = haversine(pings[1].lat, pings[1].lon, pings[2].lat, pings[2].lon)
+    if (recent.length === 3) {
+      const d1 = haversine(recent[0].lat, recent[0].lon, recent[1].lat, recent[1].lon)
+      const d2 = haversine(recent[1].lat, recent[1].lon, recent[2].lat, recent[2].lon)
       if (d1 > 5 && d2 > 5) status = 'SAFE'
     }
 
-    await pool.query(`UPDATE users SET status = $1 WHERE id = $2`, [status, user_id])
+    await usersCol.updateOne({ _id: user_id as any }, { $set: { status } })
 
-    // 6. Broadcast to rescuer panel
+    // 6. Broadcast
     manager.broadcast({ type: 'ping', user_id, lat, lon, ts, status })
 
     return { ok: true }
