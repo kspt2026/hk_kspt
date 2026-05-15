@@ -18,7 +18,7 @@ export default function App() {
           <ConfirmedSafe key="confirmed_safe" onTransition={setScreen} />
         )}
         {screen === 'dispatch_status' && (
-          <DispatchStatus key="dispatch_status" />
+          <DispatchStatus key="dispatch_status" onTransition={setScreen} />
         )}
       </AnimatePresence>
     </div>

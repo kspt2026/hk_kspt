@@ -4,10 +4,16 @@ import { Icon } from '@iconify/react';
 import { SettingsButton } from '../components/SettingsButton';
 import { FooterNote } from '../components/FooterNote';
 import { postToNative } from '../bridge';
+import type { Screen } from '../types';
 
-export function DispatchStatus() {
+interface Props {
+  onTransition: (screen: Screen) => void;
+}
+
+export function DispatchStatus({ onTransition }: Props) {
   function handleSafeConfirmation() {
     postToNative('REQUEST_SAFE_CONFIRMATION');
+    onTransition('confirmed_safe');
   }
 
   return (

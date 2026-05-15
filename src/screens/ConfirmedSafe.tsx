@@ -18,6 +18,7 @@ export function ConfirmedSafe({ onTransition }: Props) {
 
   function handleDone() {
     postToNative('REQUEST_DONE');
+    onTransition('initial');
   }
 
   return (
@@ -36,6 +37,9 @@ export function ConfirmedSafe({ onTransition }: Props) {
         className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none"
         aria-hidden
       >
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-72 h-24 rounded-full bg-red-600/20 blur-3xl" />
+        </div>
         <p className="text-2xl font-bold text-center px-6 text-white opacity-20 blur-[1px]">
           Building rumble in your area!
         </p>
