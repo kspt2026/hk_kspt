@@ -1,99 +1,78 @@
-import { Button, Card, CardContent, Chip } from '@heroui/react';
-import { motion } from 'framer-motion';
-import { Icon } from '@iconify/react';
-import { SettingsButton } from '../components/SettingsButton';
-import { FooterNote } from '../components/FooterNote';
-import { postToNative } from '../bridge';
-import type { Screen } from '../types';
+import React from 'react'
+import { View, Text } from 'react-native'
+import Animated, { FadeIn, FadeOut, ZoomIn, ZoomOut } from 'react-native-reanimated'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Button } from '../components/Button'
+import { Card, CardContent, Chip } from '../components/Card'
+import { SettingsButton } from '../components/SettingsButton'
+import { FooterNote } from '../components/FooterNote'
+import type { Screen } from '../types'
 
 interface Props {
-  onTransition: (screen: Screen) => void;
+  onTransition: (screen: Screen) => void
 }
 
 export function ConfirmedSafe({ onTransition }: Props) {
-  function handleCancel() {
-    postToNative('REQUEST_CANCEL');
-    onTransition('initial');
-  }
-
-  function handleDone() {
-    postToNative('REQUEST_DONE');
-    onTransition('initial');
-  }
-
   return (
-    <motion.div
-      key="confirmed_safe"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0a0f]"
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+      className="relative flex-1 bg-bg items-center justify-center"
     >
       <SettingsButton />
 
-      {/* Dimmed background context */}
-      <div
-        className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none"
-        aria-hidden
-      >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-72 h-24 rounded-full bg-red-600/20 blur-3xl" />
-        </div>
-        <p className="text-2xl font-bold text-center px-6 text-white opacity-20 blur-[1px]">
+      <View className="absolute inset-0 items-center justify-center" pointerEvents="none">
+        <View className="absolute w-72 h-24 rounded-full bg-red-600/20" />
+        <Text className="text-2xl font-bold text-white text-center px-6 opacity-20">
           Building rumble in your area!
-        </p>
-        <p className="text-lg text-center text-neutral-400 opacity-20 blur-[1px] mt-2">
+        </Text>
+        <Text className="text-lg text-neutral-400 text-center opacity-20 mt-2">
           Are you safe?
-        </p>
-      </div>
+        </Text>
+      </View>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.92 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      <Animated.View
+        entering={ZoomIn.springify().damping(25).stiffness(300)}
+        exiting={ZoomOut.duration(180)}
         className="w-full max-w-sm px-4"
       >
-        <Card variant="secondary" className="border border-white/10">
-          <CardContent className="flex flex-col gap-4 p-6">
-            <div className="flex items-center gap-3">
-              <Chip color="success" variant="soft" className="shrink-0">
-                <span className="flex items-center gap-1">
-                  <Icon icon="mdi:check-circle" width={14} />
-                  Safe
-                </span>
+        <Card>
+          <CardContent className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <Chip color="success">
+                <View className="flex-row items-center gap-1">
+                  <MaterialCommunityIcons name="check-circle" size={14} color="#86efac" />
+                  <Text className="text-green-300 text-xs font-medium">Safe</Text>
+                </View>
               </Chip>
-              <p className="text-white font-medium text-sm">
+              <Text className="text-white font-medium text-sm flex-1">
                 You've reported yourself safe.
-              </p>
-            </div>
+              </Text>
+            </View>
 
-            <div className="flex flex-col gap-3 mt-2">
+            <View className="gap-3 mt-2">
               <Button
                 variant="danger-soft"
-                fullWidth
                 size="lg"
-                className="min-h-12"
-                onPress={handleCancel}
+                fullWidth
+                onPress={() => onTransition('initial')}
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                fullWidth
                 size="lg"
-                className="min-h-12"
-                onPress={handleDone}
+                fullWidth
+                onPress={() => onTransition('idle')}
               >
                 Done
               </Button>
-            </div>
+            </View>
           </CardContent>
         </Card>
-      </motion.div>
+      </Animated.View>
 
       <FooterNote />
-    </motion.div>
-  );
+    </Animated.View>
+  )
 }

@@ -1,87 +1,73 @@
-import { Button } from '@heroui/react';
-import { motion } from 'framer-motion';
-import { Icon } from '@iconify/react';
-import { SettingsButton } from '../components/SettingsButton';
-import { FooterNote } from '../components/FooterNote';
-import { postToNative } from '../bridge';
-import type { Screen } from '../types';
+import React from 'react'
+import { View, Text } from 'react-native'
+import Animated, { FadeIn, FadeOut, FadeInDown } from 'react-native-reanimated'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Button } from '../components/Button'
+import { SettingsButton } from '../components/SettingsButton'
+import { FooterNote } from '../components/FooterNote'
+import type { Screen } from '../types'
 
 interface Props {
-  onTransition: (screen: Screen) => void;
+  onTransition: (screen: Screen) => void
 }
 
+const EASE = [0.25, 0.46, 0.45, 0.94] as const
+
 export function InitialPrompt({ onTransition }: Props) {
-  function handleOk() {
-    postToNative('REQUEST_STATUS_OK');
-    onTransition('confirmed_safe');
-  }
-
-  function handleNotOk() {
-    postToNative('REQUEST_STATUS_NOT_OK');
-    onTransition('dispatch_status');
-  }
-
   return (
-    <motion.div
-      key="initial"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0a0f]"
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+      className="relative flex-1 bg-bg items-center justify-center"
     >
       <SettingsButton />
 
-      <div className="flex flex-col items-center gap-3 px-6">
-        <motion.h1
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, delay: 0, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-2xl font-bold text-center text-white leading-tight"
+      <View className="items-center gap-3 px-6">
+        <Animated.Text
+          entering={FadeInDown.duration(280).delay(0)}
+          className="text-2xl font-bold text-white text-center leading-tight"
         >
           Building rumble in your area!
-        </motion.h1>
+        </Animated.Text>
 
-        <motion.p
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, delay: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="text-lg text-center text-neutral-400"
+        <Animated.Text
+          entering={FadeInDown.duration(280).delay(100)}
+          className="text-lg text-neutral-400 text-center"
         >
           Are you safe?
-        </motion.p>
+        </Animated.Text>
 
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.28, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="flex flex-row gap-4 mt-6"
+        <Animated.View
+          entering={FadeInDown.duration(280).delay(200)}
+          className="flex-row gap-4 mt-6"
         >
           <Button
             variant="primary"
             size="lg"
-            className="w-[40vw] h-[40vw] max-w-48 max-h-48 min-w-[120px] min-h-[120px] flex flex-col gap-2 text-base font-semibold rounded-2xl"
-            onPress={handleOk}
-            aria-label="I am safe"
+            square
+            accessibilityLabel="I am safe"
+            className="w-40 h-40"
+            onPress={() => onTransition('confirmed_safe')}
           >
-            <Icon icon="fluent:hand-wave-24-filled" width={40} height={40} />
-            <span>I'm OK</span>
+            <MaterialCommunityIcons name="hand-wave" size={40} color="#fff" />
+            <Text className="text-white font-semibold text-base">I'm OK</Text>
           </Button>
 
           <Button
             variant="danger"
             size="lg"
-            className="w-[40vw] h-[40vw] max-w-48 max-h-48 min-w-[120px] min-h-[120px] flex flex-col gap-2 text-base font-semibold rounded-2xl"
-            onPress={handleNotOk}
-            aria-label="I am not safe"
+            square
+            accessibilityLabel="I am not safe"
+            className="w-40 h-40"
+            onPress={() => onTransition('dispatch_status')}
           >
-            <Icon icon="mdi:close-thick" width={40} height={40} />
-            <span>Not OK</span>
+            <MaterialCommunityIcons name="close-thick" size={40} color="#fff" />
+            <Text className="text-white font-semibold text-base">Not OK</Text>
           </Button>
-        </motion.div>
-      </div>
+        </Animated.View>
+      </View>
 
       <FooterNote />
-    </motion.div>
-  );
+    </Animated.View>
+  )
 }

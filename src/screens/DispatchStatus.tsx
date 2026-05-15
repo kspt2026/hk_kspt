@@ -1,84 +1,83 @@
-import { Button, Card, CardContent, CardHeader, CardTitle } from '@heroui/react';
-import { motion } from 'framer-motion';
-import { Icon } from '@iconify/react';
-import { SettingsButton } from '../components/SettingsButton';
-import { FooterNote } from '../components/FooterNote';
-import { postToNative } from '../bridge';
-import type { Screen } from '../types';
+import React, { useEffect } from 'react'
+import { View, Text } from 'react-native'
+import Animated, {
+  FadeIn,
+  FadeOut,
+  SlideInDown,
+  SlideOutDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from 'react-native-reanimated'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { Button } from '../components/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/Card'
+import { SettingsButton } from '../components/SettingsButton'
+import { FooterNote } from '../components/FooterNote'
+import type { Screen } from '../types'
 
 interface Props {
-  onTransition: (screen: Screen) => void;
+  onTransition: (screen: Screen) => void
 }
 
 export function DispatchStatus({ onTransition }: Props) {
-  function handleSafeConfirmation() {
-    postToNative('REQUEST_SAFE_CONFIRMATION');
-    onTransition('confirmed_safe');
-  }
+  const scale = useSharedValue(1)
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    )
+  }, [])
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }))
 
   return (
-    <motion.div
-      key="dispatch_status"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="relative w-full h-full flex flex-col items-center justify-center bg-[#0a0a0f]"
+    <Animated.View
+      entering={FadeIn.duration(200)}
+      exiting={FadeOut.duration(200)}
+      className="relative flex-1 bg-bg items-center justify-center"
     >
       <SettingsButton />
 
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 40 }}
-        transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+      <Animated.View
+        entering={SlideInDown.springify().damping(26).stiffness(280)}
+        exiting={SlideOutDown.duration(180)}
         className="w-full max-w-sm px-4"
       >
-        <Card variant="secondary" className="border border-white/10">
-          <CardHeader className="pb-0 pt-6 px-6">
-            <CardTitle className="text-xl font-bold text-center text-white w-full">
-              The rescue team is on their way!
-            </CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle>The rescue team is on their way!</CardTitle>
           </CardHeader>
 
-          <CardContent className="flex flex-col items-center gap-6 p-6">
-            {/* Emergency vehicle icon with success badge */}
-            <div className="relative inline-flex items-center justify-center">
-              <motion.div
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-              >
-                <Icon
-                  icon="mdi:ambulance"
-                  width={96}
-                  height={96}
-                  className="text-red-500"
-                />
-              </motion.div>
-              <div className="absolute bottom-0 right-0 bg-[#0a0a0f] rounded-full p-0.5">
-                <Icon
-                  icon="mdi:check-circle"
-                  width={28}
-                  height={28}
-                  className="text-green-500"
-                />
-              </div>
-            </div>
+          <CardContent className="items-center gap-6">
+            <View className="relative items-center justify-center">
+              <Animated.View style={pulseStyle}>
+                <MaterialCommunityIcons name="ambulance" size={96} color="#ef4444" />
+              </Animated.View>
+              <View className="absolute bottom-0 right-0 bg-bg rounded-full p-0.5">
+                <MaterialCommunityIcons name="check-circle" size={28} color="#22c55e" />
+              </View>
+            </View>
 
             <Button
               variant="danger"
-              fullWidth
               size="lg"
-              className="min-h-12 text-base font-semibold"
-              onPress={handleSafeConfirmation}
+              fullWidth
+              onPress={() => onTransition('confirmed_safe')}
             >
               I'm safe
             </Button>
           </CardContent>
         </Card>
-      </motion.div>
+      </Animated.View>
 
       <FooterNote />
-    </motion.div>
-  );
+    </Animated.View>
+  )
 }

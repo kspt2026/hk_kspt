@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "RescueGrid",
+    "slug": "rescuegrid",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "scheme": "rescuegrid",
+    "splash": {
+      "backgroundColor": "#0a0a0f"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.rescuegrid.app",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "remote-notification"
+        ],
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "RescueGrid needs background location to detect danger zones and help rescuers find you.",
+        "NSLocationWhenInUseUsageDescription": "RescueGrid needs location to detect danger zones.",
+        "NSLocationAlwaysUsageDescription": "RescueGrid needs background location to detect danger zones and help rescuers find you."
+      }
+    },
+    "android": {
+      "package": "com.rescuegrid.app",
+      "permissions": [
+        "ACCESS_BACKGROUND_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "WAKE_LOCK"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "RescueGrid needs background location to detect danger zones and help rescuers find you."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": []
+        }
+      ],
+      "expo-asset"
+    ]
+  }
+}
