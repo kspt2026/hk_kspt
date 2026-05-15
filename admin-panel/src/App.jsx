@@ -1,4 +1,13 @@
+// MIGRATION NOTE: Panel JSX shell migrated to HeroUI primitives + Framer Motion.
+// All state, effects, handlers, API calls, and MapComponent props/ref unchanged.
+// Map block reordered to left (flex-1) per target layout; map JSX itself untouched.
+// Panel width preserved at w-80 (existing value, not spec's 420px default).
 import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Card, Input, Button, Chip, Separator,
+  Tabs, TabList, Tab, TabPanel, ScrollShadow,
+} from '@heroui/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import MapComponent from './MapComponent';
 import { getAdminUsers, getZones, postZone, deleteZone, WS_BASE_URL } from './api';
 
@@ -187,216 +196,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-gray-950 text-gray-100 overflow-hidden font-mono">
-      <aside className="w-80 flex-shrink-0 flex flex-col bg-gray-900 border-r border-gray-800">
-        <div className="px-4 py-3 border-b border-gray-800 flex-shrink-0 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <span className="text-sm font-bold tracking-widest text-red-400 uppercase">
-              RescueGrid
-            </span>
-          </div>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            wsLive
-              ? 'bg-green-900 text-green-300'
-              : 'bg-gray-800 text-gray-500'
-          }`}>
-            {wsLive ? 'WS LIVE' : 'DISCONNECTED'}
-          </span>
-        </div>
-
-        <div className="px-4 py-2 border-b border-gray-800 flex gap-3 text-xs flex-shrink-0">
-          <span className="text-gray-400">
-            Total <strong className="text-white">{users.length}</strong>
-          </span>
-          <span className="text-red-400">
-            <strong>{counts.DANGER}</strong> DANGER
-          </span>
-          <span className="text-green-400">
-            <strong>{counts.SAFE}</strong> SAFE
-          </span>
-          <span className="text-gray-500">
-            <strong>{counts.INACTIVE}</strong> inactive
-          </span>
-        </div>
-
-        <div className="flex border-b border-gray-800 flex-shrink-0">
-          {[
-            { key: 'users', label: 'Users', badge: users.length || null },
-            { key: 'zones', label: 'Zones', badge: zones.length || null },
-          ].map(({ key, label, badge }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={`flex-1 py-2 text-xs font-semibold tracking-wide transition-colors ${
-                activeTab === key
-                  ? 'text-white border-b-2 border-red-500'
-                  : 'text-gray-500 hover:text-gray-300'
-              }`}
-            >
-              {label}
-              {badge !== null && (
-                <span className="ml-1.5 bg-gray-700 text-gray-300 rounded-full px-1.5 text-xs">
-                  {badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'users' && (
-          <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex gap-1 px-3 py-2 flex-shrink-0">
-              {FILTERS.map(({ label, value }) => (
-                <button
-                  key={value}
-                  onClick={() => setUserFilter(value)}
-                  className={`flex-1 py-1 rounded text-xs font-semibold transition-colors ${
-                    userFilter === value
-                      ? 'bg-gray-600 text-white'
-                      : 'bg-gray-800 text-gray-500 hover:text-gray-300'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
-              {filteredUsers.length === 0 ? (
-                <p className="text-xs text-gray-600 italic px-1 pt-2">No users</p>
-              ) : (
-                filteredUsers.map((u) => (
-                  <div
-                    key={u.id}
-                    className={`rounded px-3 py-2 border cursor-pointer hover:opacity-80 transition-opacity ${STATUS_CARD[u.status]}`}
-                    onClick={() => {
-                      if (u.pings?.[0]) {
-                        mapRef.current?.panTo(u.pings[0].lat, u.pings[0].lon);
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className={`text-sm font-bold ${STATUS_COLOR[u.status]}`}>
-                        …{shortId(u.id)}
-                      </p>
-                      <span className={`text-xs font-bold ${STATUS_COLOR[u.status]}`}>
-                        {u.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {formatLastSeen(u.last_seen)}
-                      {u.pings?.[0] &&
-                        ` · ${u.pings[0].lat.toFixed(4)}, ${u.pings[0].lon.toFixed(4)}`}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'zones' && (
-          <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-800 flex-shrink-0 space-y-2">
-              <button
-                onClick={toggleDrawMode}
-                className={`w-full py-2 px-3 rounded text-sm font-semibold transition-colors ${
-                  drawMode
-                    ? 'bg-orange-600 hover:bg-orange-500 text-white'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
-                }`}
-              >
-                {drawMode ? 'Cancel Drawing' : '+ Draw Zone'}
-              </button>
-
-              {drawMode && (
-                <>
-                  <p className="text-xs text-orange-400">
-                    Click map to place exactly 4 points.
-                  </p>
-                  <input
-                    type="text"
-                    placeholder="Zone name (optional)"
-                    value={zoneName}
-                    onChange={(e) => setZoneName(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-orange-500"
-                  />
-                </>
-              )}
-
-              {points.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">
-                      {points.length} point{points.length !== 1 ? 's' : ''} placed
-                    </span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={undoPoint}
-                        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
-                      >
-                        Undo
-                      </button>
-                      <button
-                        onClick={clearDraft}
-                        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-300 px-2 py-1 rounded"
-                      >
-                        Clear
-                      </button>
-                    </div>
-                  </div>
-
-                  {points.length === 4 && (
-                    <button
-                      onClick={submitZone}
-                      disabled={submitting}
-                      className="w-full py-2 rounded bg-red-700 hover:bg-red-600 text-sm font-bold text-white disabled:opacity-50"
-                    >
-                      {submitting ? 'Creating…' : 'Submit Zone'}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {submitMsg && (
-                <p className={`text-xs rounded px-2 py-1.5 ${
-                  submitMsg.ok
-                    ? 'bg-green-900 text-green-300'
-                    : 'bg-red-900 text-red-300'
-                }`}>
-                  {submitMsg.text}
-                </p>
-              )}
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-              {zones.length === 0 ? (
-                <p className="text-xs text-gray-600 italic">No active zones</p>
-              ) : (
-                zones.map((z) => (
-                  <div
-                    key={z.id}
-                    className="flex items-center justify-between bg-gray-800 rounded px-3 py-2 border border-orange-900"
-                  >
-                    <div className="min-w-0 mr-2">
-                      <p className="text-sm font-bold text-orange-300 truncate">{z.name}</p>
-                      <p className="text-xs text-gray-500 font-mono">…{z.id.slice(-8)}</p>
-                    </div>
-                    <button
-                      onClick={() => handleDeleteZone(z.id)}
-                      className="flex-shrink-0 text-xs bg-red-900 hover:bg-red-700 text-red-300 hover:text-white px-2 py-1 rounded transition-colors font-semibold"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </aside>
-
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground font-mono">
       <main className="flex-1 relative">
         <MapComponent
           ref={mapRef}
@@ -415,6 +215,259 @@ export default function App() {
           </div>
         )}
       </main>
+
+      <motion.aside
+        initial={{ x: 40, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className="w-80 flex-shrink-0 h-full overflow-y-auto border-l border-default-200 bg-background"
+      >
+        <Card variant="flat" className="rounded-none border-0 bg-transparent">
+          <Card.Header className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-sm font-bold tracking-widest text-red-400 uppercase">
+                RescueGrid
+              </span>
+            </div>
+            <Chip size="sm" variant="soft" color={wsLive ? 'success' : 'default'}>
+              {wsLive ? 'WS LIVE' : 'DISCONNECTED'}
+            </Chip>
+          </Card.Header>
+
+          <Separator />
+
+          <Card.Content className="px-4 py-2 flex flex-row gap-3 text-xs">
+            <span className="text-default-500">
+              Total <strong className="text-foreground">{users.length}</strong>
+            </span>
+            <span className="text-red-400">
+              <strong>{counts.DANGER}</strong> DANGER
+            </span>
+            <span className="text-green-400">
+              <strong>{counts.SAFE}</strong> SAFE
+            </span>
+            <span className="text-default-500">
+              <strong>{counts.INACTIVE}</strong> inactive
+            </span>
+          </Card.Content>
+
+          <Separator />
+        </Card>
+
+        <div className="px-3 pt-3">
+          <Tabs
+            aria-label="Panel sections"
+            variant="primary"
+            selectedKey={activeTab}
+            onSelectionChange={(key) => setActiveTab(String(key))}
+          >
+            <TabList className="w-full">
+              <Tab id="users" className="flex-1">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span>Users</span>
+                  {users.length > 0 && (
+                    <Chip size="sm" variant="soft">{users.length}</Chip>
+                  )}
+                </div>
+              </Tab>
+              <Tab id="zones" className="flex-1">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span>Zones</span>
+                  {zones.length > 0 && (
+                    <Chip size="sm" variant="soft">{zones.length}</Chip>
+                  )}
+                </div>
+              </Tab>
+            </TabList>
+
+            <TabPanel id="users">
+              <div className="flex flex-col gap-2 pt-2">
+                <div className="flex gap-1">
+                  {FILTERS.map(({ label, value }) => (
+                    <Button
+                      key={value}
+                      onPress={() => setUserFilter(value)}
+                      size="sm"
+                      fullWidth
+                      variant={userFilter === value ? 'primary' : 'outline'}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+
+                <ScrollShadow className="max-h-[calc(100vh-260px)] flex flex-col gap-1.5 pb-3">
+                  {filteredUsers.length === 0 ? (
+                    <p className="text-xs text-default-400 italic px-1 pt-2">No users</p>
+                  ) : (
+                    <motion.div layout className="flex flex-col gap-1.5">
+                      <AnimatePresence>
+                        {filteredUsers.map((u) => (
+                          <motion.div
+                            key={u.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            <Card
+                              variant="flat"
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => {
+                                if (u.pings?.[0]) {
+                                  mapRef.current?.panTo(u.pings[0].lat, u.pings[0].lon);
+                                }
+                              }}
+                              className={`w-full border cursor-pointer hover:opacity-80 transition-opacity ${STATUS_CARD[u.status]}`}
+                            >
+                              <Card.Content className="px-3 py-2">
+                                <div className="flex items-center justify-between">
+                                  <p className={`text-sm font-bold ${STATUS_COLOR[u.status]}`}>
+                                    …{shortId(u.id)}
+                                  </p>
+                                  <span className={`text-xs font-bold ${STATUS_COLOR[u.status]}`}>
+                                    {u.status}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-default-500 mt-0.5">
+                                  {formatLastSeen(u.last_seen)}
+                                  {u.pings?.[0] &&
+                                    ` · ${u.pings[0].lat.toFixed(4)}, ${u.pings[0].lon.toFixed(4)}`}
+                                </p>
+                              </Card.Content>
+                            </Card>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </ScrollShadow>
+              </div>
+            </TabPanel>
+
+            <TabPanel id="zones">
+              <div className="flex flex-col gap-3 pt-2">
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onPress={toggleDrawMode}
+                    fullWidth
+                    variant={drawMode ? 'primary' : 'outline'}
+                  >
+                    {drawMode ? 'Cancel Drawing' : '+ Draw Zone'}
+                  </Button>
+
+                  {drawMode && (
+                    <>
+                      <p className="text-xs text-orange-400">
+                        Click map to place exactly 4 points.
+                      </p>
+                      <Input
+                        type="text"
+                        variant="primary"
+                        placeholder="Zone name (optional)"
+                        value={zoneName}
+                        onChange={(e) => setZoneName(e.target.value)}
+                      />
+                    </>
+                  )}
+
+                  {points.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-default-500">
+                          {points.length} point{points.length !== 1 ? 's' : ''} placed
+                        </span>
+                        <div className="flex gap-1">
+                          <Button
+                            onPress={undoPoint}
+                            size="sm"
+                            variant="outline"
+                          >
+                            Undo
+                          </Button>
+                          <Button
+                            onPress={clearDraft}
+                            size="sm"
+                            variant="danger-soft"
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      </div>
+
+                      {points.length === 4 && (
+                        <Button
+                          onPress={submitZone}
+                          isDisabled={submitting}
+                          fullWidth
+                          variant="primary"
+                          className="font-bold"
+                        >
+                          {submitting ? 'Creating…' : 'Submit Zone'}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
+                  {submitMsg && (
+                    <Card
+                      variant="flat"
+                      className={submitMsg.ok ? 'bg-success-900/30' : 'bg-danger-900/30'}
+                    >
+                      <Card.Content className="px-2 py-1.5">
+                        <p className={`text-xs ${submitMsg.ok ? 'text-success-300' : 'text-danger-300'}`}>
+                          {submitMsg.text}
+                        </p>
+                      </Card.Content>
+                    </Card>
+                  )}
+                </div>
+
+                <Separator />
+
+                <ScrollShadow className="max-h-[calc(100vh-320px)] flex flex-col gap-2">
+                  {zones.length === 0 ? (
+                    <p className="text-xs text-default-400 italic">No active zones</p>
+                  ) : (
+                    <motion.div layout className="flex flex-col gap-2">
+                      <AnimatePresence>
+                        {zones.map((z) => (
+                          <motion.div
+                            key={z.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.15 }}
+                          >
+                            <Card variant="flat" className="border border-orange-900">
+                              <Card.Content className="flex flex-row items-center justify-between px-3 py-2">
+                                <div className="min-w-0 mr-2">
+                                  <p className="text-sm font-bold text-orange-300 truncate">{z.name}</p>
+                                  <p className="text-xs text-default-500 font-mono">…{z.id.slice(-8)}</p>
+                                </div>
+                                <Button
+                                  onPress={() => handleDeleteZone(z.id)}
+                                  size="sm"
+                                  variant="danger-soft"
+                                  className="flex-shrink-0 font-semibold"
+                                >
+                                  Delete
+                                </Button>
+                              </Card.Content>
+                            </Card>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </ScrollShadow>
+              </div>
+            </TabPanel>
+          </Tabs>
+        </div>
+      </motion.aside>
     </div>
   );
 }

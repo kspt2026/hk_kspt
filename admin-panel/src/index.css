@@ -1,4 +1,7 @@
-@import "tailwindcss";
+/* MIGRATION NOTE: HeroUI v3 wiring. v3 ships compiled CSS (no Tailwind plugin / no
+   @heroui/theme). @heroui/styles internally imports tailwindcss + layers + .dark theme,
+   so it replaces the bare tailwindcss import. Spec's v2 plugin path N/A for v3. */
+@import "@heroui/styles";
 @import "leaflet/dist/leaflet.css";
 
 body {
