@@ -7,7 +7,8 @@ import * as Notifications from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'
-import { LOCATION_TASK } from './src/constants'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { LOCATION_TASK, IS_SAFE_KEY } from './src/constants'
 import { getUserId } from './src/storage'
 import { fetchZones, registerToken, postUserIsSafe } from './src/api'
 import { setActiveZones } from './src/locationTask'
@@ -45,9 +46,15 @@ export default function App() {
   }, [userId])
 
   function transition(next: Screen) {
+    const prev = screenRef.current
+
     if (next === 'confirmed_safe' && userIdRef.current) {
+      AsyncStorage.setItem(IS_SAFE_KEY, '1').catch(() => {})
       postUserIsSafe(userIdRef.current).catch(() => {})
+    } else if (prev === 'confirmed_safe' && next === 'initial') {
+      AsyncStorage.removeItem(IS_SAFE_KEY).catch(() => {})
     }
+
     setScreen(next)
   }
 
@@ -113,11 +120,12 @@ export default function App() {
 
         watcherRef.current = await Location.watchPositionAsync(
           { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 10 },
-          (loc) => {
+          async (loc) => {
             const inside = isInsideAnyZone(loc.coords.latitude, loc.coords.longitude, z)
-            if (inside && screenRef.current === 'idle') {
-              setScreen('initial')
-            }
+            if (!inside || screenRef.current !== 'idle') return
+            const safe = await AsyncStorage.getItem(IS_SAFE_KEY)
+            if (safe === '1') return
+            setScreen('initial')
           }
         )
 
@@ -131,6 +139,7 @@ export default function App() {
       const data = notification.request.content.data as { type?: string } | undefined
       if (data?.type === 'zones_updated') {
         try {
+          await AsyncStorage.removeItem(IS_SAFE_KEY)
           const z = await fetchZones()
           if (!mounted) return
           setActiveZones(z)
