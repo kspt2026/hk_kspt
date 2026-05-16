@@ -1,12 +1,17 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { getDB } from '../db'
-import { haversine, manager } from '../utils'
+import { manager } from '../utils'
 
 interface PingBody {
   user_id: string
   lat: number
   lon: number
+  alt: number
   ts: number
+}
+
+interface SafeBody {
+  user_id: string
 }
 
 export const userRoutes: FastifyPluginAsync = async (fastify) => {
@@ -18,22 +23,22 @@ export const userRoutes: FastifyPluginAsync = async (fastify) => {
   })
 
   fastify.post<{ Body: PingBody }>('/coords', async (req) => {
-    const { user_id, lat, lon, ts } = req.body
+    const { user_id, lat, lon, alt, ts } = req.body
     const db = getDB()
     const pingsCol = db.collection('location_pings')
     const usersCol = db.collection('users')
 
-    // 1. Upsert user
     await usersCol.updateOne(
       { _id: user_id as any },
-      { $set: { last_seen: new Date() }, $setOnInsert: { status: 'DANGER', created_at: new Date() } },
+      {
+        $set: { status: 'DANGER', last_seen: new Date() },
+        $setOnInsert: { created_at: new Date() },
+      },
       { upsert: true }
     )
 
-    // 2. Insert ping
-    await pingsCol.insertOne({ user_id, lat, lon, ts: new Date(ts), received_at: new Date() })
+    await pingsCol.insertOne({ user_id, lat, lon, alt, ts: new Date(ts), received_at: new Date() })
 
-    // 3. Trim to last 10
     const keep = await pingsCol
       .find({ user_id }, { projection: { _id: 1 } })
       .sort({ received_at: -1 })
@@ -43,25 +48,29 @@ export const userRoutes: FastifyPluginAsync = async (fastify) => {
       await pingsCol.deleteMany({ user_id, _id: { $nin: keep.map((p) => p._id) } })
     }
 
-    // 4. Fetch last 3 pings
-    const recent = await pingsCol
-      .find({ user_id }, { projection: { lat: 1, lon: 1 } })
-      .sort({ received_at: -1 })
-      .limit(3)
-      .toArray()
+    manager.broadcast({ type: 'ping', user_id, lat, lon, alt, ts, status: 'DANGER' })
 
-    // 5. Determine status
-    let status = 'DANGER'
-    if (recent.length === 3) {
-      const d1 = haversine(recent[0].lat, recent[0].lon, recent[1].lat, recent[1].lon)
-      const d2 = haversine(recent[1].lat, recent[1].lon, recent[2].lat, recent[2].lon)
-      if (d1 > 5 && d2 > 5) status = 'SAFE'
+    return { ok: true }
+  })
+
+  fastify.post<{ Body: SafeBody }>('/user-is-safe', async (req, reply) => {
+    const { user_id } = req.body
+    if (!user_id) {
+      reply.status(400)
+      return { error: 'user_id required' }
     }
 
-    await usersCol.updateOne({ _id: user_id as any }, { $set: { status } })
+    const result = await getDB().collection('users').updateOne(
+      { _id: user_id as any },
+      { $set: { status: 'SAFE', last_seen: new Date() } }
+    )
 
-    // 6. Broadcast
-    manager.broadcast({ type: 'ping', user_id, lat, lon, ts, status })
+    if (result.matchedCount === 0) {
+      reply.status(404)
+      return { error: 'user not found' }
+    }
+
+    manager.broadcast({ type: 'status_change', user_id, status: 'SAFE' })
 
     return { ok: true }
   })

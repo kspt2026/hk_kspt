@@ -39,7 +39,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
             { $match: { $expr: { $eq: ['$user_id', '$$uid'] } } },
             { $sort: { received_at: -1 } },
             { $limit: 10 },
-            { $project: { _id: 0, lat: 1, lon: 1, ts: 1 } },
+            { $project: { _id: 0, lat: 1, lon: 1, alt: 1, ts: 1 } },
           ],
           as: 'pings',
         },
