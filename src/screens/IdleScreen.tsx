@@ -1,40 +1,19 @@
-import React, { useEffect } from 'react'
-import { View, Text } from 'react-native'
-import Animated, {
-  FadeIn,
-  FadeOut,
-  FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated'
+import React from 'react'
+import { View, Text, Pressable } from 'react-native'
+import Animated, { FadeIn, FadeOut, FadeInDown } from 'react-native-reanimated'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SettingsButton } from '../components/SettingsButton'
+import type { Screen } from '../types'
 
 interface Props {
   zoneCount: number
   userIdShort: string
   status: string
+  insideZone: boolean
+  onTransition: (screen: Screen) => void
 }
 
-export function IdleScreen({ zoneCount, userIdShort, status }: Props) {
-  const pulse = useSharedValue(0)
-
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      false
-    )
-  }, [])
-
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: 1 - pulse.value,
-    transform: [{ scale: 1 + pulse.value * 1.6 }],
-  }))
-
+export function IdleScreen({ zoneCount, userIdShort, status, insideZone, onTransition }: Props) {
   return (
     <Animated.View
       entering={FadeIn.duration(200)}
@@ -44,24 +23,22 @@ export function IdleScreen({ zoneCount, userIdShort, status }: Props) {
       <SettingsButton />
 
       <View className="items-center gap-6 px-6">
-        <View className="w-32 h-32 items-center justify-center">
-          <Animated.View
-            style={ringStyle}
-            className="absolute w-32 h-32 rounded-full border-2 border-green-400"
-          />
-          <View className="w-24 h-24 rounded-full bg-green-500/15 border border-green-500/30 items-center justify-center">
-            <MaterialCommunityIcons name="shield-check" size={48} color="#4ade80" />
+        <Animated.View entering={FadeInDown.duration(280).delay(0)} className="items-center gap-2">
+          <Text
+            className="text-white font-black"
+            style={{ fontSize: 56, letterSpacing: -2, lineHeight: 60 }}
+          >
+            backtrace
+          </Text>
+          <View className="flex-row items-center gap-2">
+            <View className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            <Text className="text-sm text-neutral-400">{status}</Text>
           </View>
-        </View>
-
-        <Animated.View entering={FadeInDown.duration(280).delay(80)} className="items-center gap-2">
-          <Text className="text-2xl font-bold text-white text-center">RescueGrid</Text>
-          <Text className="text-base text-neutral-400 text-center">{status}</Text>
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.duration(280).delay(180)}
-          className="flex-row gap-3 mt-4"
+          entering={FadeInDown.duration(280).delay(120)}
+          className="flex-row gap-3 mt-2"
         >
           <View className="bg-surface border border-border rounded-xl px-4 py-3 items-center">
             <Text className="text-2xl font-bold text-white">{zoneCount}</Text>
@@ -74,7 +51,23 @@ export function IdleScreen({ zoneCount, userIdShort, status }: Props) {
         </Animated.View>
       </View>
 
-      <View className="absolute bottom-8 left-0 right-0 px-6">
+      <View className="absolute bottom-8 left-0 right-0 px-6 gap-3">
+        {insideZone && (
+          <Pressable
+            onPress={() => onTransition('initial')}
+            accessibilityLabel="Report your status"
+            className="bg-red-950/80 border border-red-800/60 rounded-2xl px-4 py-3.5 flex-row items-center gap-3 active:bg-red-900/60"
+          >
+            <View className="w-8 h-8 rounded-full bg-red-600/20 items-center justify-center">
+              <MaterialCommunityIcons name="alert" size={18} color="#ef4444" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-red-400 text-sm font-semibold">You are in a danger zone</Text>
+              <Text className="text-neutral-500 text-xs mt-0.5">Tap to report your status</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#ef4444" />
+          </Pressable>
+        )}
         <Text className="text-center text-xs text-neutral-500">
           Location stays on device until a danger zone is declared.
         </Text>

@@ -5,16 +5,24 @@ import Animated, { SlideInUp, SlideOutUp } from 'react-native-reanimated'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import type { Zone } from '../types'
 
+interface UserLocation {
+  lat: number
+  lon: number
+}
+
 interface Props {
   visible: boolean
   zones: Zone[]
   onClose: () => void
+  userLocation?: UserLocation | null
 }
 
-function buildHtml(zones: Zone[]): string {
+function buildHtml(zones: Zone[], userLocation?: UserLocation | null): string {
   const polygons = zones
     .map((z) => z.polygon.coordinates[0].map(([lon, lat]) => [lat, lon]))
     .filter((ring) => ring.length >= 3)
+
+  const userLocJson = userLocation ? JSON.stringify(userLocation) : 'null'
 
   return `<!DOCTYPE html>
 <html>
@@ -31,6 +39,8 @@ function buildHtml(zones: Zone[]): string {
   .leaflet-control-attribution a { color: #888 !important; }
   .leaflet-control-zoom a { background: #13131a !important; color: #fff !important; border-color: rgba(255,255,255,0.10) !important; }
   .leaflet-control-zoom a:hover { background: #1a1a22 !important; }
+  .user-label { background: transparent !important; border: none !important; box-shadow: none !important; color: #fff; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .user-label::before { display: none !important; }
 </style>
 </head>
 <body>
@@ -64,16 +74,37 @@ function buildHtml(zones: Zone[]): string {
   });
   group.addTo(map);
 
-  if (polygons.length) {
-    try { map.fitBounds(group.getBounds().pad(0.25)); } catch (e) {}
+  var userLoc = ${userLocJson};
+  if (userLoc) {
+    L.circleMarker([userLoc.lat, userLoc.lon], {
+      radius: 9,
+      color: '#ffffff',
+      weight: 2.5,
+      fillColor: '#3b82f6',
+      fillOpacity: 1,
+    }).addTo(map).bindTooltip('You', {
+      permanent: true,
+      direction: 'right',
+      offset: [10, 0],
+      className: 'user-label',
+    });
+  }
+
+  var bounds = polygons.length ? group.getBounds() : null;
+  if (userLoc) {
+    var pt = L.latLng(userLoc.lat, userLoc.lon);
+    bounds = bounds ? bounds.extend(pt) : L.latLngBounds([pt, pt]);
+  }
+  if (bounds && bounds.isValid()) {
+    try { map.fitBounds(bounds.pad(0.25)); } catch (e) {}
   }
 </script>
 </body>
 </html>`
 }
 
-export function MapOverlay({ visible, zones, onClose }: Props) {
-  const html = useMemo(() => buildHtml(zones), [zones])
+export function MapOverlay({ visible, zones, onClose, userLocation }: Props) {
+  const html = useMemo(() => buildHtml(zones, userLocation), [zones, userLocation])
 
   return (
     <Modal

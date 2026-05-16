@@ -41,6 +41,8 @@ export default function App() {
   const [userId, setUserId] = useState<string>('')
   const [status, setStatus] = useState('Initializing…')
   const [mapOpen, setMapOpen] = useState(false)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null)
+  const [insideZone, setInsideZone] = useState(false)
   const watcherRef = useRef<Location.LocationSubscription | null>(null)
   const screenRef = useRef<Screen>('idle')
   const userIdRef = useRef<string>('')
@@ -50,15 +52,12 @@ export default function App() {
   }, [userId])
 
   function transition(next: Screen) {
-    const prev = screenRef.current
-
     if (next === 'confirmed_safe' && userIdRef.current) {
       AsyncStorage.setItem(IS_SAFE_KEY, '1').catch(() => {})
       postUserIsSafe(userIdRef.current).catch(() => {})
-    } else if (prev === 'confirmed_safe' && next === 'initial') {
+    } else if (next === 'initial') {
       AsyncStorage.removeItem(IS_SAFE_KEY).catch(() => {})
     }
-
     setScreen(next)
   }
 
@@ -117,7 +116,7 @@ export default function App() {
             timeInterval: 15000,
             distanceInterval: 10,
             foregroundService: {
-              notificationTitle: 'RescueGrid',
+              notificationTitle: 'backtrace',
               notificationBody: 'Monitoring for danger zones',
               notificationColor: '#0a0a0f',
             },
@@ -129,7 +128,9 @@ export default function App() {
         watcherRef.current = await Location.watchPositionAsync(
           { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 10 },
           async (loc) => {
+            setUserLocation({ lat: loc.coords.latitude, lon: loc.coords.longitude })
             const inside = isInsideAnyZone(loc.coords.latitude, loc.coords.longitude, z)
+            setInsideZone(inside)
             if (!inside || screenRef.current !== 'idle') return
             const safe = await AsyncStorage.getItem(IS_SAFE_KEY)
             if (safe === '1') return
@@ -212,14 +213,20 @@ export default function App() {
       <View className="flex-1 bg-bg">
         <StatusBar style="light" />
         {screen === 'idle' && (
-          <IdleScreen zoneCount={zones.length} userIdShort={userIdShort} status={status} />
+          <IdleScreen
+            zoneCount={zones.length}
+            userIdShort={userIdShort}
+            status={status}
+            insideZone={insideZone}
+            onTransition={transition}
+          />
         )}
         {screen === 'initial' && <InitialPrompt onTransition={transition} />}
         {screen === 'confirmed_safe' && <ConfirmedSafe onTransition={transition} />}
         {screen === 'dispatch_status' && <DispatchStatus onTransition={transition} />}
 
         <MapButton zoneCount={zones.length} onPress={() => setMapOpen(true)} />
-        <MapOverlay visible={mapOpen} zones={zones} onClose={() => setMapOpen(false)} />
+        <MapOverlay visible={mapOpen} zones={zones} onClose={() => setMapOpen(false)} userLocation={userLocation} />
       </View>
     </SafeAreaProvider>
   )
