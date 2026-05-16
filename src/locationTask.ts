@@ -24,13 +24,15 @@ export function getActiveZones(): Zone[] {
 }
 
 async function resolveZones(): Promise<Zone[]> {
-  if (activeZones.length > 0) return activeZones
   try {
     const cached = await AsyncStorage.getItem(ZONES_CACHE_KEY)
-    return cached ? (JSON.parse(cached) as Zone[]) : []
-  } catch {
-    return []
-  }
+    if (cached) {
+      const zones = JSON.parse(cached) as Zone[]
+      activeZones = zones
+      return zones
+    }
+  } catch {}
+  return activeZones
 }
 
 const NOTIFY_COOLDOWN_MS = 5 * 60 * 1000

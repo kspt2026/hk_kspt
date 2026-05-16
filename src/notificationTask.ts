@@ -1,6 +1,7 @@
 import * as TaskManager from 'expo-task-manager'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NOTIFICATION_TASK, API, ZONES_CACHE_KEY } from './constants'
+import { setActiveZones } from './locationTask'
 
 TaskManager.defineTask(NOTIFICATION_TASK, async ({ data, error }) => {
   if (error || !data) return
@@ -12,6 +13,7 @@ TaskManager.defineTask(NOTIFICATION_TASK, async ({ data, error }) => {
     if (res.ok) {
       const zones = await res.json()
       await AsyncStorage.setItem(ZONES_CACHE_KEY, JSON.stringify(zones))
+      setActiveZones(zones)
     }
   } catch {}
 })
