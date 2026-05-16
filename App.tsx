@@ -18,6 +18,8 @@ import { IdleScreen } from './src/screens/IdleScreen'
 import { InitialPrompt } from './src/screens/InitialPrompt'
 import { ConfirmedSafe } from './src/screens/ConfirmedSafe'
 import { DispatchStatus } from './src/screens/DispatchStatus'
+import { MapButton } from './src/components/MapButton'
+import { MapOverlay } from './src/components/MapOverlay'
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -33,6 +35,7 @@ export default function App() {
   const [zones, setZones] = useState<Zone[]>([])
   const [userId, setUserId] = useState<string>('')
   const [status, setStatus] = useState('Initializing…')
+  const [mapOpen, setMapOpen] = useState(false)
   const watcherRef = useRef<Location.LocationSubscription | null>(null)
   const screenRef = useRef<Screen>('idle')
 
@@ -155,6 +158,9 @@ export default function App() {
         {screen === 'initial' && <InitialPrompt onTransition={setScreen} />}
         {screen === 'confirmed_safe' && <ConfirmedSafe onTransition={setScreen} />}
         {screen === 'dispatch_status' && <DispatchStatus onTransition={setScreen} />}
+
+        <MapButton zoneCount={zones.length} onPress={() => setMapOpen(true)} />
+        <MapOverlay visible={mapOpen} zones={zones} onClose={() => setMapOpen(false)} />
       </View>
     </SafeAreaProvider>
   )
