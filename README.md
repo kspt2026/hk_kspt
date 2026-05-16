@@ -15,18 +15,6 @@ Backtrace is a real-time disaster victim tracking system built for emergency res
 | Push Notifications           | Firebase Cloud Messaging via Firebase Admin SDK           |
 | Hosting                      | Railway                                                   |
 
-## Prerequisites
-
-| Tool             | Min version          | Required by                     |
-| ---------------- | -------------------- | ------------------------------- |
-| Node.js          | 20                   | backend, frontend, admin-panel  |
-| npm              | 10                   | all JS components               |
-| MongoDB          | Atlas or self-hosted | backend                         |
-| Firebase project | -                    | backend (FCM push), mobile apps |
-| Expo CLI         | 0.18                 | react-native-expo               |
-| Android Studio   | latest stable        | nitatsu-frontend                |
-| JDK              | 17                   | nitatsu-frontend                |
-
 ## How to test
 
 **Admin Dashboard**
