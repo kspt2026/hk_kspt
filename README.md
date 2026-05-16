@@ -13,7 +13,7 @@ Backtrace is a real-time disaster victim tracking system built for emergency res
 | Mobile - Android native      | Kotlin, Android WebView, Foreground Service               |
 | Database                     | MongoDB (Atlas)                                           |
 | Push Notifications           | Firebase Cloud Messaging via Firebase Admin SDK           |
-| Hosting                      | Railway                                                   |
+| Hosting                      | Railway, Vercel                                           |
 
 ## How to test
 
@@ -37,8 +37,8 @@ npx expo run:android
 **Android native app**
 
 ```bash
-git switch --detach origin/nitatsu-frontend
-# open the project root in Android Studio and sync Gradle and build .apk file
+git switch --detach origin/react-native-expo
+# open the project root in Android Studio, sync Gradle and build .apk file
 ```
 
 ## APIs & Integrations
@@ -48,6 +48,7 @@ git switch --detach origin/nitatsu-frontend
 | MongoDB Atlas            | Stores users, location pings, danger zones, and device tokens    | https://www.mongodb.com/docs/atlas                      |
 | Firebase Cloud Messaging | Silent push to wake citizen apps when danger zones change        | https://firebase.google.com/docs/cloud-messaging        |
 | Railway                  | Backend hosting and deployment                                   | https://docs.railway.app                                |
+| Vercel                   | Backend hosting and deployment                                   | https://vercel.com/                                     |
 | Expo Location            | Background GPS tracking on the mobile app                        | https://docs.expo.dev/versions/latest/sdk/location      |
 | Expo Notifications       | FCM push token registration and notification handling            | https://docs.expo.dev/versions/latest/sdk/notifications |
 | Expo Task Manager        | Defines the background GPS task that runs when the app is closed | https://docs.expo.dev/versions/latest/sdk/task-manager  |
@@ -56,11 +57,11 @@ git switch --detach origin/nitatsu-frontend
 
 | Branch              | Purpose                                                                                                                                                      | Status |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
-| `main`              | Repository root with shared documentation                                                                                                                    | active |
-| `backend`           | Fastify REST API and WebSocket server - central data layer for the entire system                                                                             | active |
-| `frontend`          | React web UI (three screens: safe / not safe / dispatch) designed to run embedded inside an Android WebView                                                  | active |
-| `admin-panel`       | Rescue operator dashboard with a live Leaflet map, user status list, and danger zone drawing tool                                                            | active |
-| `react-native-expo` | Cross-platform citizen mobile app built with Expo - background GPS, push notifications, and the full emergency status flow                                   | active |
-| `nitatsu-frontend`  | Android-native implementation of the citizen app in Kotlin, loading the `frontend` build inside a WebView with a native foreground service and state machine | active |
+| `main`              | Repository root with shared documentation                                                                                                                    |
+| `backend`           | Fastify REST API and WebSocket server - central data layer for the entire system                                                                             |
+| `frontend`          | React web UI designed to use inside an Android WebView                                                                                                       |
+| `admin-panel`       | Rescue operator dashboard with a live Leaflet map, user status list, and danger zone drawing tool                                                            |
+| `react-native-expo` | Cross-platform citizen mobile app built with Expo - background GPS, push notifications, and the full emergency status flow                                   |
+| `nitatsu-frontend`  | Android-native implementation of the citizen app in Kotlin, loading the `frontend` build inside a WebView with a native foreground service and state machine |
 
 ---
