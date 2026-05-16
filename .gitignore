@@ -16,6 +16,13 @@ dist
 dist-ssr
 *.local
 
+# Cross-branch build artifacts (Expo / React Native)
+.expo/
+android/
+ios/
+expo-env.d.ts
+web-build/
+
 # Env
 .env
 .env.local
