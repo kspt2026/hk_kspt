@@ -237,11 +237,11 @@ export default function App() {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
               <span className="text-sm font-bold tracking-widest text-white uppercase">
-                RescueGrid
+                Backtrace
               </span>
             </div>
             <Chip size="sm" variant="soft" color={wsLive ? 'success' : 'default'}>
-              {wsLive ? 'WS LIVE' : 'DISCONNECTED'}
+              {wsLive ? 'ONLINE' : 'DISCONNECTED'}
             </Chip>
           </Card.Header>
 

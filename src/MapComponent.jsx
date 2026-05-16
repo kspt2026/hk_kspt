@@ -65,9 +65,8 @@ function ZonePolygon({ zone, onDeleteZone }) {
         position={center}
         icon={L.divIcon({
           html: `<div style="
-            background:#7f1d1d;color:#fca5a5;font-size:10px;font-weight:700;
-            padding:2px 7px;border-radius:4px;white-space:nowrap;
-            border:1px solid #ef4444;box-shadow:0 1px 4px rgba(0,0,0,0.7);
+            color:#fca5a5;font-size:10px;font-weight:700;
+            padding:2px 7px;white-space:nowrap;
             font-family:monospace;
           ">${zone.name}</div>`,
           className: '',
