@@ -59,6 +59,15 @@ export default function App() {
       postUserIsSafe(userIdRef.current).catch(() => {})
     } else if (next === 'initial') {
       AsyncStorage.removeItem(IS_SAFE_KEY).catch(() => {})
+      // user reverted from safe → re-send DANGER
+      if (userIdRef.current && userLocation && insideZone) {
+        postCoords(userIdRef.current, userLocation.lat, userLocation.lon, 0).catch(() => {})
+      }
+    } else if (next === 'dispatch_status') {
+      // user confirmed NOT OK → immediately mark DANGER
+      if (userIdRef.current && userLocation && insideZone) {
+        postCoords(userIdRef.current, userLocation.lat, userLocation.lon, 0).catch(() => {})
+      }
     }
     setScreen(next)
   }
