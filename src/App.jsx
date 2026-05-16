@@ -103,7 +103,7 @@ export default function App() {
             if (msg.type === 'ping') {
               setUsers((prev) => {
                 const idx = prev.findIndex((u) => u.id === msg.user_id);
-                const newPing = { lat: msg.lat, lon: msg.lon, ts: msg.ts };
+                const newPing = { lat: msg.lat, lon: msg.lon, alt: msg.alt, ts: msg.ts };
 
                 if (idx === -1) {
                   return [...prev, {
@@ -357,6 +357,8 @@ export default function App() {
                                   {formatLastSeen(u.last_seen)}
                                   {u.pings?.[0] &&
                                     ` · ${u.pings[0].lat.toFixed(4)}, ${u.pings[0].lon.toFixed(4)}`}
+                                  {u.pings?.[0]?.alt != null &&
+                                    ` · ↕ ${Math.round(u.pings[0].alt)}m`}
                                 </p>
                               </Card.Content>
                             </Card>

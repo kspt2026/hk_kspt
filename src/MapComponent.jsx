@@ -172,6 +172,11 @@ const MapComponent = forwardRef(function MapComponent(
               <p style={{ fontSize: '11px', color: '#9ca3af' }}>
                 {u.lat.toFixed(5)}, {u.lng.toFixed(5)}
               </p>
+              {u.pings?.[0]?.alt != null && (
+                <p style={{ fontSize: '11px', color: '#9ca3af' }}>
+                  ↕ {Math.round(u.pings[0].alt)} m
+                </p>
+              )}
               {u.pings?.length > 0 && (
                 <p style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>
                   {u.pings.length} ping{u.pings.length !== 1 ? 's' : ''} recorded
