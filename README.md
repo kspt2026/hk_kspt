@@ -1,8 +1,6 @@
-# RescueGrid — Project Documentation
-
 ## What is this project?
 
-RescueGrid is a disaster victim tracking system built for emergency response scenarios (hackathon origin). When a disaster is declared, the system wakes citizen smartphones via silent push notification, detects whether users are inside a danger zone using GPS + polygon math, and begins uploading their coordinates to a central server. A rescue team dashboard shows all users on a live map with status indicators (DANGER / SAFE / INACTIVE) and allows operators to draw and manage danger zone polygons. Users can self-report their status through a simple two-button UI embedded in the mobile app.
+Backtrace is a disaster victim tracking system built for emergency response scenarios (hackathon origin). When a disaster is declared, the system wakes citizen smartphones via silent push notification, detects whether users are inside a danger zone using GPS + polygon math, and begins uploading their coordinates to a central server. A rescue team dashboard shows all users on a live map with status indicators (DANGER / SAFE / INACTIVE) and allows operators to draw and manage danger zone polygons. Users can self-report their status through a simple two-button UI embedded in the mobile app.
 
 ---
 
@@ -87,9 +85,9 @@ This is a multi-branch monorepo where each branch is a separate deployable compo
 └── package.json
 
 (origin/nitatsu-frontend)  — Android native app (Kotlin + WebView embedding frontend build)
-├── app/src/main/java/com/rescuegrid/
+├── app/src/main/java/com/Backtrace/
 │   ├── MainActivity.kt              — WebView host, permission requests, service lifecycle
-│   ├── RescueGridApp.kt             — Application class, holds EmergencyStateMachine
+│   ├── BacktraceApp.kt             — Application class, holds EmergencyStateMachine
 │   ├── bridge/EmergencyJsBridge.kt  — @JavascriptInterface: JS→Kotlin bridge
 │   ├── disaster/PolygonChecker.kt   — Point-in-polygon math (Kotlin)
 │   ├── location/LocationManager.kt  — FusedLocationProvider, zone entry detection
@@ -218,9 +216,9 @@ Tests: not documented (no test files found in any branch).
 
 | Variable | Required | Description | Example |
 |---|---|---|---|
-| `MONGODB_URI` | yes | Full MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/rescuegrid` |
-| `FIREBASE_PROJECT_ID` | yes | Firebase project ID | `rescuegrid-12345` |
-| `FIREBASE_CLIENT_EMAIL` | yes | Firebase service account email | `firebase-adminsdk-xxx@rescuegrid-12345.iam.gserviceaccount.com` |
+| `MONGODB_URI` | yes | Full MongoDB connection string | `mongodb+srv://user:pass@cluster.mongodb.net/Backtrace` |
+| `FIREBASE_PROJECT_ID` | yes | Firebase project ID | `Backtrace-12345` |
+| `FIREBASE_CLIENT_EMAIL` | yes | Firebase service account email | `firebase-adminsdk-xxx@Backtrace-12345.iam.gserviceaccount.com` |
 | `FIREBASE_PRIVATE_KEY` | yes | Firebase service account private key (with `\n` literal escapes) | `"-----BEGIN PRIVATE KEY-----\n..."` |
 | `PORT` | no | HTTP listen port (default: `3000`) | `3000` |
 
@@ -375,7 +373,7 @@ No authentication on any endpoint — not documented as implemented.
 
 - **Purpose**: Pure Android native implementation of the citizen app. Kotlin host app loads the built `origin/frontend` bundle inside an Android WebView. Implements the same emergency flow natively with a Kotlin state machine, foreground service for background GPS, and FusedLocationProvider.
 - **Status**: Active. Parallel to `react-native-expo` — two different approaches to the same Android app.
-- **Key files**: `app/src/main/java/com/rescuegrid/state/EmergencyStateMachine.kt`, `MainActivity.kt`, `bridge/EmergencyJsBridge.kt`
+- **Key files**: `app/src/main/java/com/Backtrace/state/EmergencyStateMachine.kt`, `MainActivity.kt`, `bridge/EmergencyJsBridge.kt`
 - **State machine states**: `IDLE → DISASTER_ACTIVE → WAITING_CONFIRMATION → HELP_DECLINED / SOS_ACTIVE → SOS_CANCELLED`
 - **Confirmation timeout**: 60 seconds in `WAITING_CONFIRMATION` → auto-transitions to `SOS_ACTIVE` if no user response.
 - **State persistence**: `androidx.datastore` (survives process kill).
