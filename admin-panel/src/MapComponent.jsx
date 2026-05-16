@@ -98,7 +98,7 @@ function ZonePolygon({ zone, onDeleteZone }) {
   );
 }
 
-const DEFAULT_CENTER = [50.45, 30.52];
+const DEFAULT_CENTER = [44.4268, 26.1025];
 const SHORT_ID = (id) => id.slice(-8);
 
 const MapComponent = forwardRef(function MapComponent(

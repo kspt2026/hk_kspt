@@ -53,6 +53,13 @@ export default function App() {
   const [zones,       setZones]       = useState([]);
   const [activeTab,   setActiveTab]   = useState('users');
   const [userFilter,  setUserFilter]  = useState('ALL');
+  const [hideInactive, setHideInactive] = useState(
+    () => localStorage.getItem('hideInactive') === 'true'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('hideInactive', String(hideInactive));
+  }, [hideInactive]);
   const [drawMode,    setDrawMode]    = useState(false);
   const [points,      setPoints]      = useState([]);
   const [zoneName,    setZoneName]    = useState('');
@@ -184,10 +191,13 @@ export default function App() {
     }
   }, []);
 
-  const displayUsers  = toDisplayUsers(users);
+  const visibleUsers = hideInactive
+    ? users.filter((u) => u.status !== 'INACTIVE')
+    : users;
+  const displayUsers  = toDisplayUsers(visibleUsers);
   const filteredUsers = userFilter === 'ALL'
-    ? users
-    : users.filter((u) => u.status === userFilter);
+    ? visibleUsers
+    : visibleUsers.filter((u) => u.status === userFilter);
 
   const counts = {
     DANGER:   users.filter((u) => u.status === 'DANGER').length,
@@ -298,6 +308,16 @@ export default function App() {
                     </Button>
                   ))}
                 </div>
+
+                <label className="flex items-center gap-2 text-xs text-neutral-300 px-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hideInactive}
+                    onChange={(e) => setHideInactive(e.target.checked)}
+                    className="accent-red-500"
+                  />
+                  Hide inactive
+                </label>
 
                 <ScrollShadow className="max-h-[calc(100vh-260px)] flex flex-col gap-1.5 pb-3">
                   {filteredUsers.length === 0 ? (
