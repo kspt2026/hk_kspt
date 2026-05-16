@@ -2,3 +2,19 @@ node_modules/
 dist/
 .env
 *.log
+
+# Cross-branch build artifacts (Expo / React Native)
+.expo/
+android/
+ios/
+expo-env.d.ts
+web-build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
