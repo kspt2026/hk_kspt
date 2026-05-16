@@ -28,9 +28,13 @@ export async function sendZonesUpdatedPush(tokens: string[]): Promise<void> {
     await admin.messaging().sendEachForMulticast({
       tokens,
       data: { type: 'zones_updated' },
+      notification: {
+        title: 'Danger zone update',
+        body: 'Zone status has changed.',
+      },
       android: { priority: 'high' },
       apns: {
-        headers: { 'apns-priority': '5' },
+        headers: { 'apns-priority': '10' },
         payload: { aps: { contentAvailable: true } },
       },
     })
