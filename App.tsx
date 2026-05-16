@@ -9,7 +9,7 @@ import * as Device from 'expo-device'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { LOCATION_TASK, NOTIFICATION_TASK, IS_SAFE_KEY, USER_ID_KEY } from './src/constants'
 import { getUserId } from './src/storage'
-import { fetchZones, registerToken, postUserIsSafe } from './src/api'
+import { fetchZones, registerToken, postUserIsSafe, postCoords } from './src/api'
 import { setActiveZones } from './src/locationTask'
 import './src/notificationTask'
 import { isInsideAnyZone } from './src/polygon'
@@ -46,6 +46,8 @@ export default function App() {
   const watcherRef = useRef<Location.LocationSubscription | null>(null)
   const screenRef = useRef<Screen>('idle')
   const userIdRef = useRef<string>('')
+  const zonesRef = useRef<Zone[]>([])
+  const immediateCheckRef = useRef<((zones: Zone[]) => Promise<void>) | null>(null)
 
   useEffect(() => {
     userIdRef.current = userId
@@ -108,6 +110,7 @@ export default function App() {
         if (!mounted) return
         setActiveZones(z)
         setZones(z)
+        zonesRef.current = z
 
         const isRunning = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK)
         if (!isRunning) {
@@ -129,9 +132,14 @@ export default function App() {
           { accuracy: Location.Accuracy.Balanced, timeInterval: 10000, distanceInterval: 10 },
           async (loc) => {
             setUserLocation({ lat: loc.coords.latitude, lon: loc.coords.longitude })
-            const inside = isInsideAnyZone(loc.coords.latitude, loc.coords.longitude, z)
+            const inside = isInsideAnyZone(loc.coords.latitude, loc.coords.longitude, zonesRef.current)
             setInsideZone(inside)
-            if (!inside || screenRef.current !== 'idle') return
+            if (!inside) {
+              const cur = screenRef.current
+              if (cur === 'initial' || cur === 'dispatch_status') setScreen('idle')
+              return
+            }
+            if (screenRef.current !== 'idle') return
             const safe = await AsyncStorage.getItem(IS_SAFE_KEY)
             if (safe === '1') return
             setScreen('initial')
@@ -139,6 +147,29 @@ export default function App() {
         )
 
         setStatus('Monitoring for danger zones')
+
+        const doImmediateCheck = async (currentZones: Zone[]) => {
+          try {
+            const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+            if (!mounted) return
+            const { latitude, longitude, altitude } = loc.coords
+            setUserLocation({ lat: latitude, lon: longitude })
+            const inside = isInsideAnyZone(latitude, longitude, currentZones)
+            setInsideZone(inside)
+            if (inside) {
+              const isSafe = await AsyncStorage.getItem(IS_SAFE_KEY)
+              if (isSafe !== '1' && userIdRef.current) {
+                postCoords(userIdRef.current, latitude, longitude, altitude ?? 0).catch(() => {})
+              }
+              if (screenRef.current === 'idle' && isSafe !== '1') setScreen('initial')
+            } else {
+              const cur = screenRef.current
+              if (cur === 'initial' || cur === 'dispatch_status') setScreen('idle')
+            }
+          } catch {}
+        }
+        immediateCheckRef.current = doImmediateCheck
+        doImmediateCheck(z)
 
         // handle notification that launched the app
         const lastResponse = await Notifications.getLastNotificationResponseAsync()
@@ -169,6 +200,8 @@ export default function App() {
           if (!mounted) return
           setActiveZones(z)
           setZones(z)
+          zonesRef.current = z
+          immediateCheckRef.current?.(z)
         } catch {}
       }
     })
@@ -193,6 +226,8 @@ export default function App() {
           if (!mounted) return
           setActiveZones(z)
           setZones(z)
+          zonesRef.current = z
+          immediateCheckRef.current?.(z)
         } catch {}
       }
     })
