@@ -62,6 +62,5 @@ git switch --detach origin/react-native-expo
 | `frontend`          | React web UI designed to use inside an Android WebView                                                                                                       |
 | `admin-panel`       | Rescue operator dashboard with a live Leaflet map, user status list, and danger zone drawing tool                                                            |
 | `react-native-expo` | Cross-platform citizen mobile app built with Expo - background GPS, push notifications, and the full emergency status flow                                   |
-| `nitatsu-frontend`  | Android-native implementation of the citizen app in Kotlin, loading the `frontend` build inside a WebView with a native foreground service and state machine |
 
 ---
