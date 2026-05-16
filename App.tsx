@@ -9,7 +9,7 @@ import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { LOCATION_TASK } from './src/constants'
 import { getUserId } from './src/storage'
-import { fetchZones, registerToken } from './src/api'
+import { fetchZones, registerToken, postUserIsSafe } from './src/api'
 import { setActiveZones } from './src/locationTask'
 import { isInsideAnyZone } from './src/polygon'
 import { requestLocationPermission, requestNotificationPermission } from './src/permissions'
@@ -38,6 +38,18 @@ export default function App() {
   const [mapOpen, setMapOpen] = useState(false)
   const watcherRef = useRef<Location.LocationSubscription | null>(null)
   const screenRef = useRef<Screen>('idle')
+  const userIdRef = useRef<string>('')
+
+  useEffect(() => {
+    userIdRef.current = userId
+  }, [userId])
+
+  function transition(next: Screen) {
+    if (next === 'confirmed_safe' && userIdRef.current) {
+      postUserIsSafe(userIdRef.current).catch(() => {})
+    }
+    setScreen(next)
+  }
 
   useEffect(() => {
     screenRef.current = screen
@@ -155,9 +167,9 @@ export default function App() {
         {screen === 'idle' && (
           <IdleScreen zoneCount={zones.length} userIdShort={userIdShort} status={status} />
         )}
-        {screen === 'initial' && <InitialPrompt onTransition={setScreen} />}
-        {screen === 'confirmed_safe' && <ConfirmedSafe onTransition={setScreen} />}
-        {screen === 'dispatch_status' && <DispatchStatus onTransition={setScreen} />}
+        {screen === 'initial' && <InitialPrompt onTransition={transition} />}
+        {screen === 'confirmed_safe' && <ConfirmedSafe onTransition={transition} />}
+        {screen === 'dispatch_status' && <DispatchStatus onTransition={transition} />}
 
         <MapButton zoneCount={zones.length} onPress={() => setMapOpen(true)} />
         <MapOverlay visible={mapOpen} zones={zones} onClose={() => setMapOpen(false)} />

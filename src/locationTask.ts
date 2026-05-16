@@ -15,7 +15,9 @@ export function getActiveZones(): Zone[] {
 }
 
 type LocationTaskData = {
-  locations?: Array<{ coords: { latitude: number; longitude: number } }>
+  locations?: Array<{
+    coords: { latitude: number; longitude: number; altitude: number | null }
+  }>
 }
 
 TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
@@ -23,7 +25,7 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
   try {
     const { locations } = data as LocationTaskData
     if (!locations?.length) return
-    const { latitude, longitude } = locations[0].coords
+    const { latitude, longitude, altitude } = locations[0].coords
     if (!isInsideAnyZone(latitude, longitude, activeZones)) return
 
     const userId = await AsyncStorage.getItem(USER_ID_KEY)
@@ -32,7 +34,13 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }) => {
     await fetch(`${API}/coords`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, lat: latitude, lon: longitude, ts: Date.now() }),
+      body: JSON.stringify({
+        user_id: userId,
+        lat: latitude,
+        lon: longitude,
+        alt: altitude ?? 0,
+        ts: Date.now(),
+      }),
     })
   } catch {
     // never throw in background task

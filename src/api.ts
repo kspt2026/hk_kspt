@@ -15,10 +15,23 @@ export async function registerToken(userId: string, token: string): Promise<void
   })
 }
 
-export async function postCoords(userId: string, lat: number, lon: number): Promise<void> {
+export async function postCoords(
+  userId: string,
+  lat: number,
+  lon: number,
+  alt: number
+): Promise<void> {
   await fetch(`${API}/coords`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, lat, lon, ts: Date.now() }),
+    body: JSON.stringify({ user_id: userId, lat, lon, alt, ts: Date.now() }),
+  })
+}
+
+export async function postUserIsSafe(userId: string): Promise<void> {
+  await fetch(`${API}/user-is-safe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId }),
   })
 }
