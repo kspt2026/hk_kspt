@@ -6,12 +6,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import * as Notifications from 'expo-notifications'
 import * as Location from 'expo-location'
 import * as Device from 'expo-device'
-import Constants from 'expo-constants'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { LOCATION_TASK, IS_SAFE_KEY } from './src/constants'
+import { LOCATION_TASK, NOTIFICATION_TASK, IS_SAFE_KEY, USER_ID_KEY } from './src/constants'
 import { getUserId } from './src/storage'
 import { fetchZones, registerToken, postUserIsSafe } from './src/api'
 import { setActiveZones } from './src/locationTask'
+import './src/notificationTask'
 import { isInsideAnyZone } from './src/polygon'
 import { requestLocationPermission, requestNotificationPermission } from './src/permissions'
 import type { Screen, Zone } from './src/types'
@@ -23,12 +23,16 @@ import { MapButton } from './src/components/MapButton'
 import { MapOverlay } from './src/components/MapOverlay'
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: false,
-    shouldShowList: false,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const data = notification.request.content.data as { type?: string } | undefined
+    const isLocalAlert = data?.type === 'zone_entry'
+    return {
+      shouldShowBanner: isLocalAlert,
+      shouldShowList: isLocalAlert,
+      shouldPlaySound: isLocalAlert,
+      shouldSetBadge: false,
+    }
+  },
 })
 
 export default function App() {
@@ -65,6 +69,7 @@ export default function App() {
   useEffect(() => {
     let mounted = true
     let pushSub: ReturnType<typeof Notifications.addNotificationReceivedListener> | null = null
+    let responseSub: ReturnType<typeof Notifications.addNotificationResponseReceivedListener> | null = null
     let appStateSub: ReturnType<typeof AppState.addEventListener> | null = null
 
     ;(async () => {
@@ -76,14 +81,17 @@ export default function App() {
         setStatus('Requesting permissions…')
         await requestNotificationPermission()
 
+        await Notifications.setNotificationCategoryAsync('DANGER_ZONE', [
+          { identifier: 'SAFE', buttonTitle: "I'm Safe", options: { opensAppToForeground: true } },
+        ])
+
+        try {
+          await Notifications.registerTaskAsync(NOTIFICATION_TASK)
+        } catch {}
+
         try {
           if (Device.isDevice) {
-            const projectId =
-              Constants.expoConfig?.extra?.eas?.projectId ??
-              Constants.easConfig?.projectId
-            const tokenData = projectId
-              ? await Notifications.getExpoPushTokenAsync({ projectId })
-              : await Notifications.getDevicePushTokenAsync()
+            const tokenData = await Notifications.getDevicePushTokenAsync()
             await registerToken(uid, tokenData.data)
           }
         } catch {
@@ -130,6 +138,22 @@ export default function App() {
         )
 
         setStatus('Monitoring for danger zones')
+
+        // handle notification that launched the app
+        const lastResponse = await Notifications.getLastNotificationResponseAsync()
+        if (lastResponse && mounted) {
+          const data = lastResponse.notification.request.content.data as { type?: string }
+          if (data?.type === 'zone_entry') {
+            if (lastResponse.actionIdentifier === 'SAFE') {
+              await AsyncStorage.setItem(IS_SAFE_KEY, '1')
+              const uid2 = await AsyncStorage.getItem(USER_ID_KEY)
+              if (uid2) postUserIsSafe(uid2).catch(() => {})
+              if (mounted) setScreen('confirmed_safe')
+            } else {
+              if (mounted) setScreen('initial')
+            }
+          }
+        }
       } catch (e: any) {
         setStatus(`Error: ${e?.message ?? 'init failed'}`)
       }
@@ -148,6 +172,19 @@ export default function App() {
       }
     })
 
+    responseSub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      const data = response.notification.request.content.data as { type?: string }
+      if (data?.type !== 'zone_entry') return
+      if (response.actionIdentifier === 'SAFE') {
+        await AsyncStorage.setItem(IS_SAFE_KEY, '1')
+        const uid = await AsyncStorage.getItem(USER_ID_KEY)
+        if (uid) postUserIsSafe(uid).catch(() => {})
+        if (mounted) setScreen('confirmed_safe')
+      } else {
+        if (mounted) setScreen('initial')
+      }
+    })
+
     appStateSub = AppState.addEventListener('change', async (s: AppStateStatus) => {
       if (s === 'active') {
         try {
@@ -162,6 +199,7 @@ export default function App() {
     return () => {
       mounted = false
       pushSub?.remove()
+      responseSub?.remove()
       appStateSub?.remove()
       watcherRef.current?.remove()
     }

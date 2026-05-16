@@ -1,4 +1,7 @@
 export const API = 'https://hkkspt-production.up.railway.app'
 export const LOCATION_TASK = 'RESCUEGRID_LOCATION'
+export const NOTIFICATION_TASK = 'RESCUEGRID_NOTIFICATIONS'
 export const USER_ID_KEY = 'user_id'
 export const IS_SAFE_KEY = 'is_safe'
+export const ZONES_CACHE_KEY = 'zones_cache'
+export const LAST_NOTIFIED_KEY = 'last_zone_notified_ts'
