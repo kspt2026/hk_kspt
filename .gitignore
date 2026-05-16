@@ -24,6 +24,10 @@ lerna-debug.log*
 .env.local
 .env*.local
 
+# Firebase
+google-services.json
+GoogleService-Info.plist
+
 # OS
 .DS_Store
 Thumbs.db

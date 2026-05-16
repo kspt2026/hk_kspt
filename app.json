@@ -12,7 +12,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.rescuegrid.app",
+      "bundleIdentifier": "com.rescuegrid",
       "infoPlist": {
         "UIBackgroundModes": [
           "location",
@@ -25,7 +25,8 @@
       }
     },
     "android": {
-      "package": "com.rescuegrid.app",
+      "package": "com.rescuegrid",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_BACKGROUND_LOCATION",
         "ACCESS_FINE_LOCATION",
