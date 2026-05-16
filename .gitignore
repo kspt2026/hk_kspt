@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Cross-branch build artifacts (Expo / React Native)
+.expo/
+android/
+ios/
+expo-env.d.ts
+web-build/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
