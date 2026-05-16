@@ -25,6 +25,10 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
       reply.status(404)
       return { error: 'Zone not found' }
     }
+    await Promise.all([
+      getDB().collection('users').deleteMany({}),
+      getDB().collection('location_pings').deleteMany({}),
+    ])
     sendZonesUpdatedPush(await getAllTokens()).catch(() => {})
     return { ok: true }
   })
