@@ -55,8 +55,8 @@ git switch --detach origin/react-native-expo
 
 ## Branches
 
-| Branch              | Purpose                                                                                                                                                      | Status |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Branch              | Purpose                                                                                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `main`              | Repository root with shared documentation                                                                                                                    |
 | `backend`           | Fastify REST API and WebSocket server - central data layer for the entire system                                                                             |
 | `frontend`          | React web UI designed to use inside an Android WebView                                                                                                       |
